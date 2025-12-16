@@ -1,0 +1,157 @@
+name: Weekly Auto Release
+
+on:
+  schedule:
+    # Every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  weekly-release:
+    runs-on: ubuntu-latest
+    name: Auto Version & Release
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Check if there are changes
+        id: changes
+        run: |
+          if git diff-index --quiet HEAD --; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(node -e "console.log(require('./package.json').version)")
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          CURRENT_VERSION="${{ steps.current_version.outputs.version }}"
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update version in package.json
+        run: |
+          npm version ${{ steps.new_version.outputs.version }} --no-git-tag-version
+          echo "Updated package.json to version ${{ steps.new_version.outputs.version }}"
+
+      - name: Update version in package-lock.json
+        run: |
+          npm ci
+
+      - name: Create commit and tag
+        run: |
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }}"
+          git tag -a v${{ steps.new_version.outputs.version }} -m "Release v${{ steps.new_version.outputs.version }}"
+          echo "✅ Created tag: v${{ steps.new_version.outputs.version }}"
+
+      - name: Push changes and tags
+        run: |
+          git push origin main
+          git push origin v${{ steps.new_version.outputs.version }}
+          echo "✅ Pushed to GitHub"
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.new_version.outputs.version }}
+          release_name: Release v${{ steps.new_version.outputs.version }}
+          body: |
+            # 📦 Weekly Release - v${{ steps.new_version.outputs.version }}
+
+            **Date**: ${{ github.event.scheduled_time || 'Manual Release' }}
+
+            ## Changes
+            - Auto-bumped patch version
+            - Rebuilt package
+            - Published with NPM Provenance
+
+            ## Installation
+            ```bash
+            npm install @hixbe/time@${{ steps.new_version.outputs.version }}
+            ```
+
+            ## Quick Start
+            ```bash
+            npx hixbe-time
+            ```
+
+            ---
+            This release was automatically created by GitHub Actions.
+            Package security verified with [NPM Provenance](https://docs.npmjs.com/about-npm-provenance).
+          draft: false
+          prerelease: false
+
+      - name: Publish to NPM
+        run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Release Success Summary
+        run: |
+          echo "═══════════════════════════════════════════════════════════"
+          echo "✅ WEEKLY RELEASE SUCCESSFUL"
+          echo "═══════════════════════════════════════════════════════════"
+          echo ""
+          echo "📦 Package: @hixbe/time"
+          echo "🏷️  Version: v${{ steps.new_version.outputs.version }}"
+          echo "🔄 Previous: v${{ steps.current_version.outputs.version }}"
+          echo ""
+          echo "📝 Changes:"
+          echo "  • Patch version auto-bumped"
+          echo "  • Git tag created: v${{ steps.new_version.outputs.version }}"
+          echo "  • GitHub Release published"
+          echo "  • NPM published with provenance"
+          echo ""
+          echo "🔗 Links:"
+          echo "  • NPM: https://www.npmjs.com/package/@hixbe/time"
+          echo "  • GitHub: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.new_version.outputs.version }}"
+          echo ""
+          echo "═══════════════════════════════════════════════════════════"
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Weekly release failed"
+          echo "Check the logs for details"
+          exit 1
