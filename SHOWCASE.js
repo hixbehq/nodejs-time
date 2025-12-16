@@ -210,6 +210,6 @@ console.log(`
 ═══════════════════════════════════════════════════════════════════════
 
 Made with ❤️ by Hixbe - Precision Time Solutions
-Learn more: https://github.com/hixbehq/time
+Learn more: https://github.com/hixbehq/nodejs-time
 License: MIT (2025)
 `);

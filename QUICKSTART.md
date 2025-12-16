@@ -239,7 +239,7 @@ setInterval(async () => {
 
 - Full API: [README.md](./README.md)
 - Examples: [EXAMPLES.md](./EXAMPLES.md)
-- GitHub: https://github.com/hixbehq/time
+- GitHub: https://github.com/hixbehq/nodejs-time
 
 ---
 

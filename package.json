@@ -28,7 +28,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hixbehq/time.git"
+    "url": "https://github.com/hixbehq/nodejs-time.git"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

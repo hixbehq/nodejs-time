@@ -437,8 +437,8 @@ Contributions welcome! Please submit pull requests to improve:
 
 ## Support
 
-- GitHub Issues: https://github.com/hixbehq/time/issues
-- Documentation: https://github.com/hixbehq/time#readme
+- GitHub Issues: https://github.com/hixbehq/nodejs-time/issues
+- Documentation: https://github.com/hixbehq/nodejs-time#readme
 - Contact: support@hixbe.com
 
 ---

@@ -235,7 +235,7 @@ EXAMPLES:
   hixbe-time --offset
   hixbe-time --server pool.ntp.org
 
-Learn more: https://github.com/hixbehq/time
+Learn more: https://github.com/hixbehq/nodejs-time
     `);
   }
 
