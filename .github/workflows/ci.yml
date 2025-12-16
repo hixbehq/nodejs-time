@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [20.x, 22.x]
 
     steps:
       - name: Checkout code
@@ -60,7 +60,7 @@ jobs:
             console.log('Version: ' + pkg.version);
             console.log('Type: ' + pkg.type);
             console.log('Main: ' + pkg.main);
-            console.log('Bin: ' + pkg.bin.hixbe-time);
+            console.log('Bin: ' + pkg.bin['hixbe-time']);
             if (!pkg.name.includes('@hixbe/time')) {
               console.error('Invalid package name');
               process.exit(1);
