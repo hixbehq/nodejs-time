@@ -97,7 +97,7 @@ class HixbeTimeCLI {
   private async continuousMode(): Promise<void> {
     let count = 0;
 
-    console.log(`⏱️  Starting continuous sync with ${this.options.server}`);
+    console.log(`⏱️  Starting continuous sync (will fallback to time.google.com if needed)`);
     console.log(`📊 Interval: ${this.options.interval}ms (${(this.options.interval / 1000).toFixed(1)}s)`);
     console.log('Press Ctrl+C to stop\n');
 
@@ -114,8 +114,9 @@ class HixbeTimeCLI {
         count++;
         const time = result.parsed.timestamps.transmit.date;
         const status = offset > 500 ? '⚠️ ' : offset < -500 ? '⚠️ ' : '✅';
+        const server = result.usedServer || this.options.server;
 
-        console.log(`[${count}] ${status} ${time.toISOString()} | Offset: ${offset > 0 ? '+' : ''}${offset.toFixed(0)}ms`);
+        console.log(`[${count}] ${status} ${time.toISOString()} | Server: ${server} | Offset: ${offset > 0 ? '+' : ''}${offset.toFixed(0)}ms`);
 
         await this.sleep(this.options.interval);
       } catch (error) {
@@ -132,7 +133,7 @@ class HixbeTimeCLI {
     console.log('═'.repeat(70));
     console.log('🕐 HIXBE TIME SYNC');
     console.log('═'.repeat(70));
-    console.log(`\nServer:        ${result.serverAddress} (${this.options.server})`);
+    console.log(`\nServer:        ${result.serverAddress} (${result.usedServer || this.options.server})`);
     console.log(`UTC Time:      ${tx.iso}`);
     console.log(`Local Time:    ${tx.local}`);
     console.log(`Offset:        ${offset > 0 ? '+' : ''}${(offset / 1000).toFixed(3)} seconds`);
@@ -153,6 +154,7 @@ class HixbeTimeCLI {
       iso: result.parsed.timestamps.transmit.iso,
       server: {
         address: result.serverAddress,
+        hostname: result.usedServer || this.options.server,
         stratum: result.parsed.header.stratum,
         referenceId: result.parsed.header.referenceId,
       },

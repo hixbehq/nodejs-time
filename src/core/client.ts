@@ -5,6 +5,7 @@ export interface NTPClientConfig {
   host?: string;
   port?: number;
   timeout?: number;
+  fallbackServers?: string[];
 }
 
 export interface NTPQueryResult {
@@ -14,6 +15,7 @@ export interface NTPQueryResult {
   serverAddress: string;
   clientReceiveTime: Date;
   clientOriginateTime: Date;
+  usedServer?: string;
 }
 
 /**
@@ -23,22 +25,47 @@ export class NTPClient {
   private host: string;
   private port: number;
   private timeout: number;
+  private fallbackServers: string[];
 
   constructor(config: NTPClientConfig = {}) {
     this.host = config.host || 'time.hixbe.com';
     this.port = config.port || 123;
     this.timeout = config.timeout || 5000;
+    // Default fallback servers if none provided
+    this.fallbackServers = config.fallbackServers || ['time.google.com', 'pool.ntp.org'];
   }
 
   /**
-   * Send NTP request and receive response
+   * Send NTP request and receive response with automatic fallback
    */
   async query(): Promise<NTPQueryResult> {
+    const servers = [this.host, ...this.fallbackServers];
+    let lastError: Error | null = null;
+
+    for (const server of servers) {
+      try {
+        return await this.queryServer(server);
+      } catch (error) {
+        lastError = error as Error;
+        // Continue to next server
+      }
+    }
+
+    // All servers failed
+    throw new Error(
+      `NTP query failed for all servers (${servers.join(', ')}): ${lastError?.message}`
+    );
+  }
+
+  /**
+   * Query a specific NTP server
+   */
+  private async queryServer(host: string): Promise<NTPQueryResult> {
     return new Promise((resolve, reject) => {
       const client = dgram.createSocket('udp4');
       const timeoutId = setTimeout(() => {
         client.close();
-        reject(new Error(`NTP request timeout after ${this.timeout}ms`));
+        reject(new Error(`NTP request timeout after ${this.timeout}ms to ${host}`));
       }, this.timeout);
 
       client.on('message', (buffer, rinfo) => {
@@ -56,6 +83,7 @@ export class NTPClient {
             serverAddress: rinfo.address,
             clientReceiveTime,
             clientOriginateTime: new Date(Date.now() - this.timeout / 2),
+            usedServer: host,
           });
         } catch (error) {
           reject(error);
@@ -72,7 +100,7 @@ export class NTPClient {
       const ntpPacket = this.createRequestPacket();
 
       try {
-        client.send(ntpPacket, 0, ntpPacket.length, this.port, this.host, (error) => {
+        client.send(ntpPacket, 0, ntpPacket.length, this.port, host, (error) => {
           if (error) {
             clearTimeout(timeoutId);
             client.close();
