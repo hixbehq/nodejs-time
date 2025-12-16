@@ -1,0 +1,78 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish'
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    name: Publish to NPM
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Verify build
+        run: |
+          test -f dist/index.js || (echo "dist/index.js not found" && exit 1)
+          test -f dist/index.d.ts || (echo "dist/index.d.ts not found" && exit 1)
+          test -f dist/cli/index.js || (echo "dist/cli/index.js not found" && exit 1)
+
+      - name: Publish to NPM with Provenance
+        run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release Comment
+        if: github.event_name == 'release'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const packageJson = require('./package.json');
+            const version = packageJson.version;
+            const repoUrl = context.payload.repository.html_url;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ Published @hixbe/time@${version} to NPM\n\n📦 Install with: \`npm install @hixbe/time@${version}\`\n\n🔐 This package was published with [NPM Provenance](https://docs.npmjs.com/about-npm-provenance).`
+            })
+
+      - name: Notify on Success
+        run: |
+          echo "✅ Successfully published @hixbe/time to NPM"
+          echo "📦 Package: @hixbe/time"
+          echo "🔐 Provenance: Enabled"
+          echo "🔗 Visit: https://www.npmjs.com/package/@hixbe/time"
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Publication failed"
+          echo "Check the logs above for details"
+          exit 1

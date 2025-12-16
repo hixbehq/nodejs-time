@@ -1,0 +1,49 @@
+{
+  "name": "@hixbe/time",
+  "version": "1.0.0",
+  "description": "High-precision NTP time synchronization package with CLI tools",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "hixbe-time": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli/index.js",
+    "cli": "node dist/cli/index.js",
+    "test": "node --test dist/**/*.test.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ntp",
+    "network-time-protocol",
+    "time",
+    "synchronization",
+    "time-server",
+    "hixbe"
+  ],
+  "author": "Hixbe",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hixbehq/time.git"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

@@ -1,0 +1,46 @@
+# Source files
+src/
+tsconfig.json
+
+# Documentation
+README.md
+QUICKSTART.md
+EXAMPLES.md
+PROJECT_SUMMARY.md
+INDEX.md
+COMPLETE.md
+VISUAL_GUIDE.md
+SHOWCASE.js
+
+# Configuration
+.gitignore
+.npmignore
+.github/
+.editorconfig
+
+# Testing & Development
+*.test.ts
+*.spec.ts
+coverage/
+.nyc_output/
+test/
+
+# CI/CD
+.github/
+
+# Development dependencies
+@types/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# License file is kept
+# package.json is kept
+# dist/ is kept (compiled output)
