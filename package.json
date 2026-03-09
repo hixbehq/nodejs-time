@@ -1,6 +1,6 @@
 {
   "name": "@hixbe/time",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "High-precision NTP time synchronization package with CLI tools",
   "type": "module",
   "main": "dist/index.js",
